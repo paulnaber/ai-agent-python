@@ -1,4 +1,4 @@
-from functions.get_file_info import get_files_info
+from functions.get_files_info import get_files_info
 
 if __name__ == "__main__":
     print(f"Result for current directory:\n{get_files_info("calculator", ".")}")
