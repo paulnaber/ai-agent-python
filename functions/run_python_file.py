@@ -1,6 +1,30 @@
 from functions.utils import check_working_directory
 import os
 import subprocess
+from openai.types.chat import ChatCompletionToolParam
+
+schema_run_python_file: ChatCompletionToolParam = {
+    "type": "function",
+    "function": {
+        "name": "run_python_file",
+        "description": "Executes a Python file relative to the working directory with optional arguments",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "file_path": {
+                    "type": "string",
+                    "description": "Path to the Python file to execute, relative to the working directory",
+                },
+                "args": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Optional arguments to pass to the Python file",
+                },
+            },
+            "required": ["file_path"],
+        },
+    },
+}
 
 
 def run_python_file(
@@ -28,9 +52,9 @@ def run_python_file(
             stdout = completeded_process.stdout
             stderr = completeded_process.stderr
 
-            if rt is not 0:
+            if rt != 0:
                 string = string + f"Process exited with code {rt}/n"
-            if (stdout is "") and {stderr is ""}:
+            if (stdout == "") and {stderr == ""}:
                 string = string + "No output produced"
             if stdout:
                 string = string + f"STDOUT: {stdout}"

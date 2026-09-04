@@ -1,5 +1,28 @@
 from .utils import check_working_directory
 import os
+from openai.types.chat import ChatCompletionToolParam
+
+schema_write_file: ChatCompletionToolParam = {
+    "type": "function",
+    "function": {
+        "name": "write_file",
+        "description": "Writes or overwrites a file relative to the working directory",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "file_path": {
+                    "type": "string",
+                    "description": "Path to the file to write, relative to the working directory",
+                },
+                "content": {
+                    "type": "string",
+                    "description": "Content to write to the file",
+                },
+            },
+            "required": ["file_path", "content"],
+        },
+    },
+}
 
 def write_file(working_directory: str, file_path: str, content: str) -> str:
     try:
