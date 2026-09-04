@@ -1,13 +1,10 @@
 import os
 from dotenv import load_dotenv
 from openai import OpenAI
+from openai.types.chat import ChatCompletionMessageParam
 import argparse
+from call_function import available_functions, call_function
 from prompts import system_prompt
-from functions.get_file_content import schema_get_file_content
-from functions.get_files_info import schema_get_files_info
-from functions.run_python_file import schema_run_python_file
-from functions.write_file import schema_write_file
-import json
 
 load_dotenv()
 api_key = os.environ.get("OPENROUTER_API_KEY")
@@ -27,16 +24,9 @@ def main():
     args = parser.parse_args()
     # Now we can access `args.user_prompt`
 
-    messages = [
+    messages: list[ChatCompletionMessageParam] = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": args.user_prompt},
-    ]
-
-    available_functions = [
-        schema_get_files_info,
-        schema_get_file_content,
-        schema_run_python_file,
-        schema_write_file,
     ]
 
     response = client.chat.completions.create(
@@ -46,19 +36,24 @@ def main():
     )
 
     message = response.choices[0].message
+    if args.verbose:
+        print(f"User prompt: {args.user_prompt}")
+        if response.usage is not None:
+            print(f"Prompt tokens: {response.usage.prompt_tokens}")
+            print(f"Response tokens: {response.usage.completion_tokens}")
+        else:
+            raise RuntimeError("Response usage information is not available")
+
     if message.tool_calls:
         for tool_call in message.tool_calls:
-            function_args = json.loads(tool_call.function.arguments or "{}")
-            print(f"Calling function: {tool_call.function.name}({function_args})")
+            if tool_call.type != "function":
+                raise RuntimeError(f"Unsupported tool call type: {tool_call.type}")
+            result_message = call_function(tool_call, verbose=args.verbose)
+            if not result_message["content"]:
+                raise RuntimeError("Function call returned empty content")
+            if args.verbose:
+                print(f"-> {result_message['content']}")
     else:
-        if args.verbose:
-            print(f"User prompt: {args.user_prompt}")
-            if response.usage is not None:
-                print(f"Prompt tokens: {response.usage.prompt_tokens}")
-                print(f"Response tokens: {response.usage.completion_tokens}")
-            else:
-                raise RuntimeError("Response usage information is not available")
-        
         print(f"Response: {response.choices[0].message.content}")
 
 
